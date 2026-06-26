@@ -78,4 +78,5 @@ flutter build windows --release
 
 - Исходный код: [Leon4rdik/FlClashX](https://github.com/Leon4rdik/FlClashX)
 - Релизы: [github.com/Leon4rdik/FlClashX/releases](https://github.com/Leon4rdik/FlClashX/releases)
+- Оригинальный проект: [pluralplay/FlClashX](https://github.com/pluralplay/FlClashX)
 - Лицензия: [LICENSE](LICENSE)
