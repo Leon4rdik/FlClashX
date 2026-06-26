@@ -1,0 +1,22 @@
+display_name: FlClashX
+
+packager: pluralplay
+packagerEmail: mail@pluralplay.rw
+license: Other
+
+priority: optional
+section: x11
+installed_size: 6604
+essential: false
+icon: ./assets/images/icon.png
+
+keywords:
+  - FlClashX
+  - Clash
+    - Proxy
+
+generic_name: FlClashX
+
+group: Applications/Internet
+
+startup_notify: true

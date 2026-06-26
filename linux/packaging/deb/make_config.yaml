@@ -1,0 +1,28 @@
+display_name: FlClashX
+package_name: FlClashX
+maintainer:
+  name: pluralplay
+  email: mail@pluralplay.rw
+
+priority: optional
+section: x11
+installed_size: 6604
+essential: false
+icon: ./assets/images/icon.png
+
+dependencies:
+  - libayatana-appindicator3-dev
+  - libkeybinder-3.0-dev
+
+keywords:
+  - FlClashX
+  - Clash
+  - ClashMeta
+  - Proxy
+
+generic_name: FlClashX
+
+categories:
+  - Network
+
+startup_notify: true

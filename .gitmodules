@@ -1,0 +1,4 @@
+[submodule "plugins/flutter_distributor"]
+	path = plugins/flutter_distributor
+	url = git@github.com:pluralplay/flutter_distributor.git
+	branch = FlClash
