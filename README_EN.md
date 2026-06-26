@@ -6,9 +6,9 @@
 
 ## FlClashX
 
-[![Downloads](https://img.shields.io/github/downloads/pluralplay/FlClashX/total?style=flat-square&logo=github)](https://github.com/pluralplay/FlClashX/releases/)
-[![Last Version](https://img.shields.io/github/release/pluralplay/FlClashX/all.svg?style=flat-square)](https://github.com/pluralplay/FlClashX/releases/)
-[![License](https://img.shields.io/github/license/pluralplay/FlClashX?style=flat-square)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/Leon4rdik/FlClashX/total?style=flat-square&logo=github)](https://github.com/Leon4rdik/FlClashX/releases/)
+[![Last Version](https://img.shields.io/github/release/Leon4rdik/FlClashX/all.svg?style=flat-square)](https://github.com/Leon4rdik/FlClashX/releases/)
+[![License](https://img.shields.io/github/license/Leon4rdik/FlClashX?style=flat-square)](LICENSE)
 
 [![Channel](https://img.shields.io/badge/Telegram-Chat-blue?style=flat-square&logo=telegram)](https://t.me/FlClashX)
 
@@ -222,7 +222,7 @@ The following actions are supported:
 
 ## Download
 
-<a href="https://github.com/pluralplay/FlClashX/releases"><img alt="Get it on GitHub" src="snapshots/get-it-on-github.svg" width="200px"/></a>
+<a href="https://github.com/Leon4rdik/FlClashX/releases"><img alt="Get it on GitHub" src="snapshots/get-it-on-github.svg" width="200px"/></a>
 
 ## Star
 
