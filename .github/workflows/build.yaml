@@ -14,6 +14,7 @@ jobs:
       has-android-signing: ${{ steps.flags.outputs.has-android-signing }}
       has-macos-signing: ${{ steps.flags.outputs.has-macos-signing }}
       has-macos-notarization: ${{ steps.flags.outputs.has-macos-notarization }}
+      has-telegram: ${{ steps.flags.outputs.has-telegram }}
     steps:
       - name: Detect release secrets
         id: flags
@@ -29,10 +30,15 @@ jobs:
           APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID_1: ${{ secrets.TELEGRAM_CHANNEL_ID_1 }}
+          TELEGRAM_CHANNEL_ID_2: ${{ secrets.TELEGRAM_CHANNEL_ID_2 }}
+          TELEGRAM_CHANNEL_ID_3: ${{ secrets.TELEGRAM_CHANNEL_ID_3 }}
         run: |
           has_android_signing=false
           has_macos_signing=false
           has_macos_notarization=false
+          has_telegram=false
 
           if [ -n "$KEYSTORE" ] && [ -n "$KEY_ALIAS" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_PASSWORD" ]; then
             has_android_signing=true
@@ -46,9 +52,14 @@ jobs:
             has_macos_notarization=true
           fi
 
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHANNEL_ID_1" ] && [ -n "$TELEGRAM_CHANNEL_ID_2" ] && [ -n "$TELEGRAM_CHANNEL_ID_3" ]; then
+            has_telegram=true
+          fi
+
           echo "has-android-signing=$has_android_signing" >> "$GITHUB_OUTPUT"
           echo "has-macos-signing=$has_macos_signing" >> "$GITHUB_OUTPUT"
           echo "has-macos-notarization=$has_macos_notarization" >> "$GITHUB_OUTPUT"
+          echo "has-telegram=$has_telegram" >> "$GITHUB_OUTPUT"
 
   build:
     needs: [release-config]
@@ -313,7 +324,7 @@ jobs:
 
   upload:
     permissions: write-all
-    needs: [build, sign-macos]
+    needs: [release-config, build, sign-macos]
     if: always() && (needs.build.result == 'success')
     runs-on: ubuntu-latest
     steps:
@@ -426,7 +437,7 @@ jobs:
           echo "commits=$commits_escaped" >> $GITHUB_OUTPUT
 
       - name: Send Telegram notifications
-        if: success()
+        if: success() && needs.release-config.outputs.has-telegram == 'true'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID_1: ${{ secrets.TELEGRAM_CHANNEL_ID_1 }}
