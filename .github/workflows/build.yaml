@@ -159,6 +159,11 @@ jobs:
           cache-dependency-path: |
             core/go.sum
 
+      - name: Tidy Go Modules
+        if: matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true'
+        working-directory: core
+        run: go mod tidy
+
       - name: Setup Flutter (ARM)
         if: ${{ (matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true') && (startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')) }}
         uses: subosito/flutter-action@v2
