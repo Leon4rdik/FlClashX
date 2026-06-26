@@ -37,10 +37,7 @@
         </tr>
         <tr>
             <td>macOS</td>
-            <td>
-                <a href="https://github.com/Leon4rdik/FlClashX/releases/download/vVERSION/FlClashX-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-%23000000.svg?logo=apple"></a><br>
-                <a href="https://github.com/Leon4rdik/FlClashX/releases/download/vVERSION/FlClashX-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20X64-%2300A9E0.svg?logo=apple"></a><br>
-            </td>
+            <td>DMG builds require Apple signing/notarization secrets in repository settings.</td>
         </tr>
         <tr>
             <td>Linux</td>
