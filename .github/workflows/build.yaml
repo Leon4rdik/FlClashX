@@ -8,8 +8,54 @@ env:
   IS_STABLE: ${{ !contains(github.ref, '-') }}
 
 jobs:
+  release-config:
+    runs-on: ubuntu-latest
+    outputs:
+      has-android-signing: ${{ steps.flags.outputs.has-android-signing }}
+      has-macos-signing: ${{ steps.flags.outputs.has-macos-signing }}
+      has-macos-notarization: ${{ steps.flags.outputs.has-macos-notarization }}
+    steps:
+      - name: Detect release secrets
+        id: flags
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_DEVELOPER_ID: ${{ secrets.APPLE_DEVELOPER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          has_android_signing=false
+          has_macos_signing=false
+          has_macos_notarization=false
+
+          if [ -n "$KEYSTORE" ] && [ -n "$KEY_ALIAS" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_PASSWORD" ]; then
+            has_android_signing=true
+          fi
+
+          if [ -n "$APPLE_CERTIFICATE" ] && [ -n "$APPLE_CERTIFICATE_PASSWORD" ] && [ -n "$APPLE_DEVELOPER_ID" ] && [ -n "$APPLE_TEAM_ID" ]; then
+            has_macos_signing=true
+          fi
+
+          if [ -n "$APPLE_API_KEY_BASE64" ] && [ -n "$APPLE_API_ISSUER" ] && [ -n "$APPLE_API_KEY_ID" ]; then
+            has_macos_notarization=true
+          fi
+
+          echo "has-android-signing=$has_android_signing" >> "$GITHUB_OUTPUT"
+          echo "has-macos-signing=$has_macos_signing" >> "$GITHUB_OUTPUT"
+          echo "has-macos-notarization=$has_macos_notarization" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: [release-config]
     runs-on: ${{ matrix.os }}
+    env:
+      HAS_ANDROID_SIGNING: ${{ needs.release-config.outputs.has-android-signing }}
+      HAS_MACOS_SIGNING: ${{ needs.release-config.outputs.has-macos-signing }}
     strategy:
       fail-fast: false
       matrix:
@@ -53,8 +99,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Skip macOS build without signing secrets
+        if: matrix.platform == 'macos' && env.HAS_MACOS_SIGNING != 'true'
+        run: echo "macOS signing secrets are not configured; skipping macOS artifact for this release."
+
       - name: Setup macOS Signing Certificate
-        if: matrix.platform == 'macos'
+        if: matrix.platform == 'macos' && env.HAS_MACOS_SIGNING == 'true'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -94,7 +144,7 @@ jobs:
           echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
 
       - name: Setup Android Signing
-        if: startsWith(matrix.platform,'android')
+        if: startsWith(matrix.platform,'android') && env.HAS_ANDROID_SIGNING == 'true'
         run: |
           echo "${{ secrets.KEYSTORE }}" | base64 --decode > android/app/keystore.jks
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/local.properties
@@ -102,6 +152,7 @@ jobs:
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
 
       - name: Setup Go
+        if: matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true'
         uses: actions/setup-go@v5
         with:
           go-version: "1.26.0"
@@ -109,7 +160,7 @@ jobs:
             core/go.sum
 
       - name: Setup Flutter (ARM)
-        if: startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')
+        if: ${{ (matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true') && (startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')) }}
         uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.44.0
@@ -117,19 +168,21 @@ jobs:
           cache: true
 
       - name: Setup Flutter
-        if: ${{ !(startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')) }}
+        if: ${{ (matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true') && !(startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')) }}
         uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.41.6
           cache: true
 
-      - run: flutter --version
+      - if: matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true'
+        run: flutter --version
 
       - name: Get Flutter Dependency
+        if: matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true'
         run: flutter pub get
 
       - name: Setup Xcode Signing Configuration
-        if: matrix.platform == 'macos'
+        if: matrix.platform == 'macos' && env.HAS_MACOS_SIGNING == 'true'
         env:
           APPLE_DEVELOPER_ID: ${{ secrets.APPLE_DEVELOPER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -142,9 +195,11 @@ jobs:
           echo "✅ Created Local.xcconfig for signing"
 
       - name: Setup
+        if: matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true'
         run: dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
 
       - name: Upload
+        if: matrix.platform != 'macos' || env.HAS_MACOS_SIGNING == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) }}
@@ -166,8 +221,8 @@ jobs:
           fi
 
   sign-macos:
-    needs: [build]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release-config, build]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.release-config.outputs.has-macos-signing == 'true' && needs.release-config.outputs.has-macos-notarization == 'true'
     strategy:
       matrix:
         include:
@@ -270,7 +325,7 @@ jobs:
           merge-multiple: true
 
       - name: Download signed macOS artifacts
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && needs.sign-macos.result == 'success'
         uses: actions/download-artifact@v4
         with:
           path: ./dist/
